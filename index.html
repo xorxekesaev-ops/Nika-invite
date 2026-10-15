@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Для Ники 💌</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:Georgia,'Times New Roman',serif;color:#7a2e4d;
+    background:linear-gradient(135deg,#ffe3ec,#ffd1e0,#fde8f1);padding:16px;overflow:hidden}
+  .card{width:min(94vw,460px);padding:34px 26px;text-align:center;border-radius:26px;
+    background:rgba(255,255,255,.75);box-shadow:0 12px 40px rgba(214,100,140,.25)}
+  .screen{display:none}.screen.active{display:block;animation:fade .7s}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  h1{font-size:1.5rem;line-height:1.4;margin-bottom:22px;font-weight:600}
+  h2{font-size:1.3rem;margin-bottom:16px}
+  button{font:inherit;border:none;border-radius:999px;padding:13px 34px;cursor:pointer;
+    background:#ff7aa8;color:#fff;font-weight:600;font-size:1.1rem;transition:transform .15s,background .2s}
+  button:hover{background:#ff5f95}
+  #yes:hover{transform:scale(1.06)}
+  #no{background:#d9c0cc;color:#6b4256;margin-left:10px;transition:left .25s,top .25s;
+    user-select:none;-webkit-user-select:none;touch-action:none}
+  #no:hover{background:#d9c0cc}
+  textarea{width:100%;min-height:110px;padding:14px;border:2px solid #ffc2d6;border-radius:16px;
+    font:inherit;font-size:1rem;color:#5a2038;resize:vertical;margin-bottom:16px;outline:none}
+  textarea:focus{border-color:#ff7aa8}
+  .label{margin-bottom:8px;font-size:1rem}
+  .chips{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .chip{background:#ffe3ec;color:#c2185b;padding:10px 20px;font-size:1rem}
+  .chip:hover{background:#ffc2d6}
+  .chip.sel{background:#ff7aa8;color:#fff}
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(255,214,228,.85);z-index:10}
+  .modal.show{display:flex;animation:fade .5s}
+  .modal div{background:#fff;padding:40px 36px;border-radius:26px;font-size:1.6rem;
+    box-shadow:0 12px 40px rgba(214,100,140,.35);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="screen active" id="s1">
+    <h1>Дорогая Ника! Ты по-настоящему роскошная девушка, от которой я без ума и в эйфории! Я хочу пригласить тебя на свидание, к которому я приложу все усилия, чтобы тебе понравилось!</h1>
+    <button id="yes">Да 💖</button>
+    <button id="no" tabindex="-1" aria-hidden="true">Нет</button>
+  </div>
+
+  <div class="screen" id="s2">
+    <h2>Расскажи о своих пожеланиях ✨</h2>
+    <textarea id="wishes" placeholder="Куда хочешь пойти, что любишь, чего бы не хотелось..."></textarea>
+    <p class="label">Когда тебе удобнее?</p>
+    <div class="chips" id="times">
+      <button class="chip" data-v="Утро">Утро 🌅</button>
+      <button class="chip" data-v="День">День ☀️</button>
+      <button class="chip" data-v="Вечер">Вечер 🌙</button>
+    </div>
+    <button id="send">Отправить 💌</button>
+  </div>
+</div>
+
+<div class="modal" id="bye"><div>Целую, до встречи! 💋</div></div>
+
+<script>
+const TG_TOKEN = "8952987753:AAF5HT8AuhXW-9m4D_9U28vtwhHtZRdDick";
+const TG_CHAT_ID = "837156338";
+
+const $ = id => document.getElementById(id);
+let time = null;
+let lastX = 0, lastY = 0;
+
+const no = $('no');
+const DANGER = 90;
+
+function jump() {
+  if (no.parentElement !== document.body) document.body.appendChild(no);
+  no.style.position = 'fixed';
+  no.style.margin = '0';
+  const m = 12;
+  const w = no.offsetWidth, h = no.offsetHeight;
+  let x, y, tries = 0;
+  do {
+    x = m + Math.random() * (innerWidth - w - m * 2);
+    y = m + Math.random() * (innerHeight - h - m * 2);
+    tries++;
+  } while (tries < 30 && Math.hypot(x - lastX, y - lastY) < 150);
+  lastX = x; lastY = y;
+  no.style.left = x + 'px';
+  no.style.top = y + 'px';
+}
+
+function near(px, py) {
+  const r = no.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  return Math.hypot(px - cx, py - cy) < Math.max(r.width, r.height) / 2 + DANGER;
+}
+
+document.addEventListener('mousemove', e => {
+  if ($('s1').classList.contains('active') && near(e.clientX, e.clientY)) jump();
+});
+document.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  if ($('s1').classList.contains('active') && near(t.clientX, t.clientY)) {
+    e.preventDefault(); jump();
+  }
+}, {passive: false});
+['mouseenter','pointerdown','touchstart','click','focus'].forEach(ev =>
+  no.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); jump(); }, {passive: false})
+);
+no.addEventListener('keydown', e => { e.preventDefault(); jump(); });
+window.addEventListener('resize', () => { if (no.style.position === 'fixed') jump(); });
+
+$('yes').onclick = () => {
+  no.style.display = 'none';
+  $('s1').classList.remove('active');
+  $('s2').classList.add('active');
+};
+
+document.querySelectorAll('.chip').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+    b.classList.add('sel');
+    time = b.dataset.v;
+  };
+});
+
+$('send').onclick = async () => {
+  const wishes = $('wishes').value.trim();
+  if (!wishes || !time) { alert('Напиши пожелания и выбери время 🙂'); return; }
+  $('send').disabled = true;
+  const text = `Ника сказала ДА! 💖\n\nВремя: ${time}\nПожелания: ${wishes}`;
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({chat_id: TG_CHAT_ID, text})
+    });
+  } catch (e) { console.error(e); }
+  $('bye').classList.add('show');
+};
+</script>
+</body>
+</html>
