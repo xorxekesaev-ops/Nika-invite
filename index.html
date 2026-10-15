@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-cache">
+<meta http-equiv="expires" content="0">
+<meta http-equiv="pragma" content="no-cache">
 <title>Для Ники 💌</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -14,12 +17,15 @@
     box-shadow:0 12px 40px rgba(0,0,30,.5)}
   .screen{display:none}.screen.active{display:block;animation:fade .7s}
   @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  h1{font-size:1.5rem;line-height:1.4;margin-bottom:22px;font-weight:600}
+  h1{font-size:1.5rem;line-height:1.4;margin-bottom:22px;font-weight:600;min-height:9.5em;text-align:left}
+  h1.typing::after{content:'|';margin-left:2px;animation:blink .8s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
   h2{font-size:1.3rem;margin-bottom:16px}
   button{font:inherit;border:2px solid #d4af37;border-radius:999px;padding:13px 28px;cursor:pointer;
     background:#14307a;color:#d4af37;font-weight:600;font-size:1.05rem;transition:transform .15s,background .2s,color .2s}
   button:hover{background:#d4af37;color:#0b1f5c}
   button:disabled{opacity:.5;cursor:default}
+  .hide{visibility:hidden}
   #yes:hover{transform:scale(1.06)}
   #no{background:#0b1f5c;color:#b8962e;border-color:#b8962e;margin-left:10px;transition:left .25s,top .25s;
     user-select:none;-webkit-user-select:none;touch-action:none}
@@ -32,7 +38,6 @@
   textarea:focus{border-color:#f5e08a}
   .pref-box{display:none}
   .pref-box.show{display:block;animation:fade .5s}
-  .label{margin-bottom:8px;font-size:1rem}
   .chips{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
   .chip{padding:10px 20px;font-size:1rem}
   .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -40,19 +45,18 @@
   .modal.show{display:flex;animation:fade .5s}
   .modal div{background:#14307a;color:#d4af37;border:2px solid #d4af37;padding:40px 36px;border-radius:26px;
     font-size:1.6rem;box-shadow:0 12px 40px rgba(0,0,30,.6);text-align:center}
+  #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:20}
 </style>
 </head>
 <body>
 
-<div class="card">
-  <!-- Окно 1 -->
+<div class="card" id="card">
   <div class="screen active" id="s1">
-    <h1>Дорогая Ника! Ты по-настоящему роскошная девушка, от которой я без ума и в эйфории! Я хочу пригласить тебя на свидание, к которому я приложу все усилия, чтобы тебе понравилось!</h1>
-    <button id="yes">Да 💖</button>
-    <button id="no" tabindex="-1" aria-hidden="true">Нет</button>
+    <h1 id="title" class="typing"></h1>
+    <button id="yes" class="hide">Да 💖</button>
+    <button id="no" class="hide" tabindex="-1" aria-hidden="true">Нет</button>
   </div>
 
-  <!-- Окно 2: формат -->
   <div class="screen" id="s2">
     <h2>Пожелания по формату ✨</h2>
     <div class="choices">
@@ -65,7 +69,6 @@
     </div>
   </div>
 
-  <!-- Окно 3: еда -->
   <div class="screen" id="s3">
     <h2>Пожелания по еде 🍽️</h2>
     <div class="choices">
@@ -78,7 +81,6 @@
     </div>
   </div>
 
-  <!-- Окно 4: время -->
   <div class="screen" id="s4">
     <h2>Когда тебе удобнее? 🕰️</h2>
     <div class="chips" id="times">
@@ -90,24 +92,59 @@
   </div>
 </div>
 
-<!-- Финальное окно -->
 <div class="modal" id="bye"><div>Целую, до встречи! 💋</div></div>
+<canvas id="confetti"></canvas>
+<audio id="bowSound" preload="auto" src="bow.mp3"></audio>
 
 <script>
-const TG_TOKEN = "8952987753:AAFIgDLY7wq3cCCjK7qvYAne1_Bx2qP7Q1A";
+const TG_TOKEN = "8952987753:AAF7z-sal3DqZront-9fwM43TGwBLxkC3tg";
 const TG_CHAT_ID = "837156338";
 
+const GREETING = "Дорогая Ника! Ты по-настоящему роскошная девушка, от которой я без ума и в эйфории! Я хочу пригласить тебя на свидание, к которому я приложу все усилия, чтобы тебе понравилось!";
+
 const $ = id => document.getElementById(id);
+const pageOpened = Date.now();
 let time = null;
 let lastX = 0, lastY = 0;
+let noTries = 0, lastTry = 0;
+let ready = false;
 
 const AUTO = 'на твой выбор';
 const answers = {format: AUTO, food: AUTO};
 
+/* ---------- Печатающийся текст ---------- */
+const title = $('title');
+let typeIndex = 0, typeTimer = null;
+
+function finishTyping() {
+  clearTimeout(typeTimer);
+  title.textContent = GREETING;
+  title.classList.remove('typing');
+  $('yes').classList.remove('hide');
+  $('no').classList.remove('hide');
+  ready = true;
+}
+
+function typeNext() {
+  if (typeIndex >= GREETING.length) { finishTyping(); return; }
+  const ch = GREETING[typeIndex++];
+  title.textContent = GREETING.slice(0, typeIndex);
+  const pause = '!.,'.includes(ch) ? 260 : 32;
+  typeTimer = setTimeout(typeNext, pause);
+}
+
+$('card').addEventListener('click', () => { if (!ready) finishTyping(); });
+typeTimer = setTimeout(typeNext, 600);
+
+/* ---------- Убегающая кнопка «Нет» ---------- */
 const no = $('no');
 const DANGER = 90;
 
-function jump() {
+function jump(count = true) {
+  if (count) {
+    const t = Date.now();
+    if (t - lastTry > 700) { noTries++; lastTry = t; }
+  }
   if (no.parentElement !== document.body) document.body.appendChild(no);
   no.style.position = 'fixed';
   no.style.margin = '0';
@@ -131,9 +168,10 @@ function near(px, py) {
 }
 
 document.addEventListener('mousemove', e => {
-  if ($('s1').classList.contains('active') && near(e.clientX, e.clientY)) jump();
+  if (ready && $('s1').classList.contains('active') && near(e.clientX, e.clientY)) jump();
 });
 document.addEventListener('touchstart', e => {
+  if (!ready) return;
   const t = e.touches[0];
   if ($('s1').classList.contains('active') && near(t.clientX, t.clientY)) {
     e.preventDefault(); jump();
@@ -143,14 +181,77 @@ document.addEventListener('touchstart', e => {
   no.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); jump(); }, {passive: false})
 );
 no.addEventListener('keydown', e => { e.preventDefault(); jump(); });
-window.addEventListener('resize', () => { if (no.style.position === 'fixed') jump(); });
+window.addEventListener('resize', () => { if (no.style.position === 'fixed') jump(false); });
 
+/* ---------- Звук кнопок ---------- */
+const bowSound = $('bowSound');
+
+function playClickSound() {
+  if (!bowSound) return;
+  bowSound.pause();
+  bowSound.currentTime = 0;
+  bowSound.play().catch(() => {});
+}
+
+/* ---------- Золотое конфетти ---------- */
+const cv = $('confetti'), cx = cv.getContext('2d');
+const GOLD = ['#d4af37', '#f5e08a', '#fff3b0', '#b8962e', '#ffffff'];
+let parts = [], running = false, endAt = 0;
+
+function sizeCanvas() { cv.width = innerWidth; cv.height = innerHeight; }
+window.addEventListener('resize', sizeCanvas);
+sizeCanvas();
+
+function spawn(n, anywhere) {
+  for (let i = 0; i < n; i++) {
+    parts.push({
+      x: Math.random() * cv.width,
+      y: anywhere ? Math.random() * cv.height * 0.5 : -10 - Math.random() * 40,
+      vx: (Math.random() - 0.5) * 2,
+      vy: 2 + Math.random() * 3,
+      w: 5 + Math.random() * 6,
+      h: 8 + Math.random() * 8,
+      r: Math.random() * 6.28,
+      vr: (Math.random() - 0.5) * 0.3,
+      c: GOLD[(Math.random() * GOLD.length) | 0]
+    });
+  }
+}
+
+function loop(now) {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  if (now < endAt) spawn(4, false);
+  parts.forEach(p => {
+    p.x += p.vx + Math.sin(p.y / 30) * 0.6;
+    p.y += p.vy;
+    p.vy += 0.02;
+    p.r += p.vr;
+    cx.save();
+    cx.translate(p.x, p.y);
+    cx.rotate(p.r);
+    cx.fillStyle = p.c;
+    cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    cx.restore();
+  });
+  parts = parts.filter(p => p.y < cv.height + 20);
+  if (parts.length || now < endAt) requestAnimationFrame(loop);
+  else { running = false; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+
+function startConfetti() {
+  endAt = performance.now() + 7000;
+  spawn(140, true);
+  if (!running) { running = true; requestAnimationFrame(loop); }
+}
+
+/* ---------- Окна ---------- */
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $(id).classList.add('active');
 }
 
 $('yes').onclick = () => {
+  playClickSound();
   no.style.display = 'none';
   show('s2');
 };
@@ -159,6 +260,7 @@ const NEXT = {format: 's3', food: 's4'};
 
 document.querySelectorAll('.choice').forEach(b => {
   b.onclick = () => {
+    playClickSound();
     const step = b.dataset.step;
     if (b.dataset.mode === 'pref') {
       b.parentElement.querySelectorAll('.choice').forEach(c => c.classList.remove('sel'));
@@ -173,6 +275,7 @@ document.querySelectorAll('.choice').forEach(b => {
 
 ['format', 'food'].forEach(step => {
   $(step + '-next').onclick = () => {
+    playClickSound();
     const v = $(step + '-text').value.trim();
     if (!v) { alert('Напиши пожелания или вернись и выбери «Оставляю на выбор тебе» 🙂'); return; }
     answers[step] = v;
@@ -182,16 +285,48 @@ document.querySelectorAll('.choice').forEach(b => {
 
 document.querySelectorAll('.chip').forEach(b => {
   b.onclick = () => {
+    playClickSound();
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
     b.classList.add('sel');
     time = b.dataset.v;
   };
 });
 
+/* ---------- Данные для Telegram ---------- */
+function deviceInfo() {
+  const ua = navigator.userAgent;
+  let os = 'неизвестно';
+  if (/iPhone/.test(ua)) os = 'iPhone';
+  else if (/iPad/.test(ua)) os = 'iPad';
+  else if (/Android/.test(ua)) os = 'Android';
+  else if (/Macintosh/.test(ua)) os = 'Mac';
+  else if (/Windows/.test(ua)) os = 'Windows';
+  else if (/Linux/.test(ua)) os = 'Linux';
+  let br = 'браузер';
+  if (/YaBrowser/.test(ua)) br = 'Яндекс Браузер';
+  else if (/Edg/.test(ua)) br = 'Edge';
+  else if (/OPR|Opera/.test(ua)) br = 'Opera';
+  else if (/CriOS|Chrome/.test(ua)) br = 'Chrome';
+  else if (/FxiOS|Firefox/.test(ua)) br = 'Firefox';
+  else if (/Safari/.test(ua)) br = 'Safari';
+  return `${os}, ${br}, экран ${screen.width}x${screen.height}`;
+}
+
 $('send').onclick = async () => {
+  playClickSound();
   if (!time) { alert('Выбери время 🙂'); return; }
   $('send').disabled = true;
-  const text = `Ника сказала ДА! 💖\n\nФормат: ${answers.format}\nЕда: ${answers.food}\nВремя: ${time}`;
+  const when = new Date().toLocaleString('ru-RU', {timeZone: 'Europe/Moscow'});
+  const secs = Math.round((Date.now() - pageOpened) / 1000);
+  const text =
+    `Ника сказала ДА! 💖\n\n` +
+    `Формат: ${answers.format}\n` +
+    `Еда: ${answers.food}\n` +
+    `Время: ${time}\n\n` +
+    `Отправлено: ${when} (МСК)\n` +
+    `Устройство: ${deviceInfo()}\n` +
+    `Попыток нажать «Нет»: ${noTries}\n` +
+    `Времени на странице: ${secs} сек`;
   try {
     await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -200,6 +335,7 @@ $('send').onclick = async () => {
     });
   } catch (e) { console.error(e); }
   $('bye').classList.add('show');
+  startConfetti();
 };
 </script>
 </body>
