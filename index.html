@@ -7,49 +7,80 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{min-height:100vh;display:flex;align-items:center;justify-content:center;
-    font-family:Georgia,'Times New Roman',serif;color:#7a2e4d;
-    background:linear-gradient(135deg,#ffe3ec,#ffd1e0,#fde8f1);padding:16px;overflow:hidden}
+    font-family:Georgia,'Times New Roman',serif;color:#d4af37;
+    background:linear-gradient(135deg,#1b3a8c,#2350b8,#14307a);padding:16px;overflow:hidden}
   .card{width:min(94vw,460px);padding:34px 26px;text-align:center;border-radius:26px;
-    background:rgba(255,255,255,.75);box-shadow:0 12px 40px rgba(214,100,140,.25)}
+    background:rgba(8,24,70,.78);border:1px solid rgba(212,175,55,.5);
+    box-shadow:0 12px 40px rgba(0,0,30,.5)}
   .screen{display:none}.screen.active{display:block;animation:fade .7s}
   @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
   h1{font-size:1.5rem;line-height:1.4;margin-bottom:22px;font-weight:600}
   h2{font-size:1.3rem;margin-bottom:16px}
-  button{font:inherit;border:none;border-radius:999px;padding:13px 34px;cursor:pointer;
-    background:#ff7aa8;color:#fff;font-weight:600;font-size:1.1rem;transition:transform .15s,background .2s}
-  button:hover{background:#ff5f95}
+  button{font:inherit;border:2px solid #d4af37;border-radius:999px;padding:13px 28px;cursor:pointer;
+    background:#14307a;color:#d4af37;font-weight:600;font-size:1.05rem;transition:transform .15s,background .2s,color .2s}
+  button:hover{background:#d4af37;color:#0b1f5c}
+  button:disabled{opacity:.5;cursor:default}
   #yes:hover{transform:scale(1.06)}
-  #no{background:#d9c0cc;color:#6b4256;margin-left:10px;transition:left .25s,top .25s;
+  #no{background:#0b1f5c;color:#b8962e;border-color:#b8962e;margin-left:10px;transition:left .25s,top .25s;
     user-select:none;-webkit-user-select:none;touch-action:none}
-  #no:hover{background:#d9c0cc}
-  textarea{width:100%;min-height:110px;padding:14px;border:2px solid #ffc2d6;border-radius:16px;
-    font:inherit;font-size:1rem;color:#5a2038;resize:vertical;margin-bottom:16px;outline:none}
-  textarea:focus{border-color:#ff7aa8}
+  #no:hover{background:#0b1f5c;color:#b8962e}
+  .choices{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+  .choice.sel,.chip.sel{background:#d4af37;color:#0b1f5c}
+  textarea{width:100%;min-height:110px;padding:14px;border:2px solid #d4af37;border-radius:16px;
+    font:inherit;font-size:1rem;color:#f5e08a;background:rgba(0,10,50,.6);resize:vertical;margin-bottom:16px;outline:none}
+  textarea::placeholder{color:rgba(212,175,55,.55)}
+  textarea:focus{border-color:#f5e08a}
+  .pref-box{display:none}
+  .pref-box.show{display:block;animation:fade .5s}
   .label{margin-bottom:8px;font-size:1rem}
   .chips{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-  .chip{background:#ffe3ec;color:#c2185b;padding:10px 20px;font-size:1rem}
-  .chip:hover{background:#ffc2d6}
-  .chip.sel{background:#ff7aa8;color:#fff}
+  .chip{padding:10px 20px;font-size:1rem}
   .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-    background:rgba(255,214,228,.85);z-index:10}
+    background:rgba(5,15,50,.9);z-index:10}
   .modal.show{display:flex;animation:fade .5s}
-  .modal div{background:#fff;padding:40px 36px;border-radius:26px;font-size:1.6rem;
-    box-shadow:0 12px 40px rgba(214,100,140,.35);text-align:center}
+  .modal div{background:#14307a;color:#d4af37;border:2px solid #d4af37;padding:40px 36px;border-radius:26px;
+    font-size:1.6rem;box-shadow:0 12px 40px rgba(0,0,30,.6);text-align:center}
 </style>
 </head>
 <body>
 
 <div class="card">
+  <!-- Окно 1 -->
   <div class="screen active" id="s1">
     <h1>Дорогая Ника! Ты по-настоящему роскошная девушка, от которой я без ума и в эйфории! Я хочу пригласить тебя на свидание, к которому я приложу все усилия, чтобы тебе понравилось!</h1>
     <button id="yes">Да 💖</button>
     <button id="no" tabindex="-1" aria-hidden="true">Нет</button>
   </div>
 
+  <!-- Окно 2: формат -->
   <div class="screen" id="s2">
-    <h2>Расскажи о своих пожеланиях ✨</h2>
-    <textarea id="wishes" placeholder="Куда хочешь пойти, что любишь, чего бы не хотелось..."></textarea>
-    <p class="label">Когда тебе удобнее?</p>
+    <h2>Пожелания по формату ✨</h2>
+    <div class="choices">
+      <button class="choice" data-step="format" data-mode="pref">Есть предпочтения</button>
+      <button class="choice" data-step="format" data-mode="auto">Оставляю на выбор тебе</button>
+    </div>
+    <div class="pref-box" id="format-box">
+      <textarea id="format-text" placeholder="Напиши, какой формат свидания хочешь..."></textarea>
+      <button id="format-next">Далее</button>
+    </div>
+  </div>
+
+  <!-- Окно 3: еда -->
+  <div class="screen" id="s3">
+    <h2>Пожелания по еде 🍽️</h2>
+    <div class="choices">
+      <button class="choice" data-step="food" data-mode="pref">Есть предпочтения</button>
+      <button class="choice" data-step="food" data-mode="auto">Оставляю на выбор тебе</button>
+    </div>
+    <div class="pref-box" id="food-box">
+      <textarea id="food-text" placeholder="Напиши, что хочешь поесть, чего не любишь..."></textarea>
+      <button id="food-next">Далее</button>
+    </div>
+  </div>
+
+  <!-- Окно 4: время -->
+  <div class="screen" id="s4">
+    <h2>Когда тебе удобнее? 🕰️</h2>
     <div class="chips" id="times">
       <button class="chip" data-v="Утро">Утро 🌅</button>
       <button class="chip" data-v="День">День ☀️</button>
@@ -59,15 +90,19 @@
   </div>
 </div>
 
+<!-- Финальное окно -->
 <div class="modal" id="bye"><div>Целую, до встречи! 💋</div></div>
 
 <script>
-const TG_TOKEN = "8952987753:AAF5HT8AuhXW-9m4D_9U28vtwhHtZRdDick";
+const TG_TOKEN = "8952987753:AAFIgDLY7wq3cCCjK7qvYAne1_Bx2qP7Q1A";
 const TG_CHAT_ID = "837156338";
 
 const $ = id => document.getElementById(id);
 let time = null;
 let lastX = 0, lastY = 0;
+
+const AUTO = 'на твой выбор';
+const answers = {format: AUTO, food: AUTO};
 
 const no = $('no');
 const DANGER = 90;
@@ -110,11 +145,40 @@ document.addEventListener('touchstart', e => {
 no.addEventListener('keydown', e => { e.preventDefault(); jump(); });
 window.addEventListener('resize', () => { if (no.style.position === 'fixed') jump(); });
 
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
 $('yes').onclick = () => {
   no.style.display = 'none';
-  $('s1').classList.remove('active');
-  $('s2').classList.add('active');
+  show('s2');
 };
+
+const NEXT = {format: 's3', food: 's4'};
+
+document.querySelectorAll('.choice').forEach(b => {
+  b.onclick = () => {
+    const step = b.dataset.step;
+    if (b.dataset.mode === 'pref') {
+      b.parentElement.querySelectorAll('.choice').forEach(c => c.classList.remove('sel'));
+      b.classList.add('sel');
+      $(step + '-box').classList.add('show');
+    } else {
+      answers[step] = AUTO;
+      show(NEXT[step]);
+    }
+  };
+});
+
+['format', 'food'].forEach(step => {
+  $(step + '-next').onclick = () => {
+    const v = $(step + '-text').value.trim();
+    if (!v) { alert('Напиши пожелания или вернись и выбери «Оставляю на выбор тебе» 🙂'); return; }
+    answers[step] = v;
+    show(NEXT[step]);
+  };
+});
 
 document.querySelectorAll('.chip').forEach(b => {
   b.onclick = () => {
@@ -125,10 +189,9 @@ document.querySelectorAll('.chip').forEach(b => {
 });
 
 $('send').onclick = async () => {
-  const wishes = $('wishes').value.trim();
-  if (!wishes || !time) { alert('Напиши пожелания и выбери время 🙂'); return; }
+  if (!time) { alert('Выбери время 🙂'); return; }
   $('send').disabled = true;
-  const text = `Ника сказала ДА! 💖\n\nВремя: ${time}\nПожелания: ${wishes}`;
+  const text = `Ника сказала ДА! 💖\n\nФормат: ${answers.format}\nЕда: ${answers.food}\nВремя: ${time}`;
   try {
     await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: 'POST',
